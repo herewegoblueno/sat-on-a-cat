@@ -1,9 +1,11 @@
 package main
 
 import (
+	"os"
 	sat "sat/pkg"
 )
 
 func main() {
-	sat.ParseCNFFile("toy_simple.cnf")
+	filePath := os.Args[1]
+	sat.ParseCNFFile(filePath)
 }

@@ -11,5 +11,14 @@ func main() {
 		fmt.Errorf("Error: no CNF files supplied")
 	}
 	filePath := os.Args[1]
-	sat.ParseCNFFile(filePath)
+	formula, formulaState, err := sat.ParseCNFFile(filePath)
+	if err != nil {
+		fmt.Errorf("Error", err)
+	}
+
+	formula.PrintBooleanFormula()
+	fmt.Println("Solving...")
+	isSat, state := formula.SolveFormula(formulaState)
+	fmt.Printf("Solution: Is sat: %v \n", isSat)
+	sat.PrintBooleanFormulaState(state)
 }

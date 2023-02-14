@@ -5,33 +5,46 @@ type ClauseIndex int
 type VarState int
 type InstanceState int
 
-//Important that int(POS) == int (IPOS), same for INEG also
 const (
 	POS VarState = iota
 	NEG
-	DEFAULT //Only ever used in inital parsing
+	DEFAULT //Only ever used in initial parsing
 )
 
 type SATClause struct {
-	index     ClauseIndex
-	instances map[VarIndex]VarState
+	//--Immutable (after parsing finishes)
+	Index     ClauseIndex
+	Instances map[VarIndex]VarState
 }
 
 type SATVar struct {
-	index             VarIndex
-	isPure            bool
-	clauseAppearances map[ClauseIndex]VarState
+	//--Immutable (after parsing finishes)
+	Index             VarIndex
+	ClauseAppearances map[ClauseIndex]VarState
 
 	//These are only used for initial parsing
-	lastSeenState VarState
+	LastSeenState VarState
 }
 
 type BooleanFormula struct {
-	vars        map[VarIndex]SATVar
-	clauses     map[ClauseIndex]SATClause
-	sat         bool          `default:true` //TODO: does this work??
-	unitClauses []ClauseIndex //Unit clauses
+	//--Immutable (after parsing finishes)
+	Vars    map[VarIndex]*SATVar
+	Clauses map[ClauseIndex]*SATClause
 }
 
-// vars: [2: SATVar{2, ?, [0: POS]}]
-// clauses: [0: SATClause{0, [2: IPOS]}]
+type WatchedLiterals struct {
+	left  VarIndex
+	right VarIndex
+}
+
+type BooleanFormulaState struct {
+	//--Mutable and copied during branching
+	Formula                                        *BooleanFormula
+	Assignments                                    map[VarIndex]VarState
+	ClauseWatchedLiterals                          map[ClauseIndex]WatchedLiterals //Won't contain unit clauses
+	VariablesKeepingTrackOfWhereTheyreBeingWatched map[VarIndex][]ClauseIndex
+	DeletedClauses                                 map[ClauseIndex]bool //Bootleg set
+	UnitClauses                                    map[ClauseIndex]bool //Bootleg set
+	PureVariables                                  map[VarIndex]VarState
+	Sat                                            bool `default:true`
+}

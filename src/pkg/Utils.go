@@ -44,15 +44,17 @@ func PrintSATVar(v *SATVar) {
 
 func PrintBooleanFormulaState(s *BooleanFormulaState) {
 	//For now, just print the assignments...
+	irrelevantVariables := "Irrelevant Variables: "
 	for varIndx := range s.Formula.Vars {
-		fmt.Printf("V %v: ", varIndx)
 		if assignmnet, ok := s.Assignments[varIndx]; ok {
-			fmt.Print(PrintVarState(assignmnet))
+			fmt.Printf("V%v: %v    ", varIndx, PrintVarState(assignmnet))
 		} else {
-			fmt.Print("-")
+			irrelevantVariables += fmt.Sprintf("V%v, ", varIndx)
 		}
-		fmt.Print("   ")
 	}
+	fmt.Println("")
+	fmt.Println("")
+	fmt.Println(irrelevantVariables)
 	fmt.Println("")
 }
 

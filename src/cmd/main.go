@@ -20,5 +20,7 @@ func main() {
 	fmt.Println("Solving...")
 	isSat, state := formula.SolveFormula(formulaState)
 	fmt.Printf("Solution: Is sat: %v \n", isSat)
-	sat.PrintBooleanFormulaState(state)
+	if isSat {
+		sat.PrintBooleanFormulaState(state)
+	}
 }

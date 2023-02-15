@@ -10,6 +10,8 @@ import (
 	"strings"
 )
 
+// TODO: non deterministic parsing dropping vars somehow?
+
 func ParseCNFFile(filename string) (*BooleanFormula, *BooleanFormulaState, error) {
 	file, err := os.Open(filename)
 
@@ -33,7 +35,7 @@ func ParseCNFFile(filename string) (*BooleanFormula, *BooleanFormulaState, error
 		make(map[ClauseIndex]WatchedLiterals),
 		make(map[VarIndex][]ClauseIndex),
 		make(map[ClauseIndex]bool),
-		make(map[ClauseIndex]bool),
+		make(map[ClauseIndex]VarIndex),
 		make(map[VarIndex]VarState),
 		true,
 	}
@@ -88,10 +90,15 @@ func ParseCNFFile(filename string) (*BooleanFormula, *BooleanFormulaState, error
 				//then just remove it from the clause entirely
 				previousAppearanceInCurrentClause, ok := currVar.ClauseAppearances[currClause.Index]
 				if ok && previousAppearanceInCurrentClause != newState {
-					//Remove the variable from the clause (because it's both positive and negative in the same clause)
-					//TODO: Haven't found a way for it to restore its purity
-					delete(currClause.Instances, currVarIndex)
-					delete(currVar.ClauseAppearances, currClause.Index)
+					//Stop parsing the whole clause if there's both positive and negative in the same clause
+					//Because this clause is essentially unconstrained (there's not way it can be unsatisfied)
+					//TODO: Haven't found a way for it to re-check the purity of the variables it used to contain
+					for varIndx := range currClause.Instances {
+						delete(currFormula.Vars[varIndx].ClauseAppearances, currClause.Index)
+					}
+					//Make the map empty to act like it's empty (code down below will handle that gracefully), then end
+					currClause.Instances = make(map[VarIndex]VarState)
+					break
 				} else {
 					currClause.Instances[currVarIndex] = newState
 					currVar.ClauseAppearances[currClause.Index] = newState
@@ -106,7 +113,6 @@ func ParseCNFFile(filename string) (*BooleanFormula, *BooleanFormulaState, error
 						currVar.LastSeenState = newState
 					}
 				}
-
 			}
 
 			//Only add the clause if it's not empty
@@ -114,7 +120,12 @@ func ParseCNFFile(filename string) (*BooleanFormula, *BooleanFormulaState, error
 			if clauseLength > 0 {
 				currFormula.Clauses[ClauseIndex(clauseNum)] = &currClause
 				if clauseLength == 1 {
-					initialState.UnitClauses[ClauseIndex(clauseNum)] = true
+					//Pick one (the only, actually) variable
+					for varIndx := range currClause.Instances {
+						initialState.UnitClauses[ClauseIndex(clauseNum)] = varIndx
+						break
+					}
+
 				}
 			}
 			clauseNum += 1

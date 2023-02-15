@@ -1,2 +1,2 @@
 ./compile.sh
-./run.sh toy_infeasible.cnf
+./run.sh toy_test.cnf

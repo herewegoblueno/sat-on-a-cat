@@ -1,9 +1,10 @@
 package pkg
 
-import "fmt"
-
-//Does all of it at once
+// Does all of it at once
 func (s *BooleanFormulaState) UnitClauseElimination() error {
+
+	// fmt.Println("num of unit clauses", len(s.UnitClauses))
+	// fmt.Println("tell me the unit clauses", s.UnitClauses)
 	for len(s.UnitClauses) != 0 && s.Sat {
 		//Pick one at a time
 		var unitClauseIndx ClauseIndex
@@ -11,37 +12,29 @@ func (s *BooleanFormulaState) UnitClauseElimination() error {
 			unitClauseIndx = k
 			break
 		}
+
+		unitVarIndx := s.UnitClauses[unitClauseIndx]
+		unitInstanceState := s.Formula.Clauses[unitClauseIndx].Instances[unitVarIndx]
+
+		// fmt.Printf("Unit clause elimination of V%v in clause C%v \n", unitVarIndx, unitClauseIndx)
+
 		delete(s.UnitClauses, unitClauseIndx)
-		unitClause := s.Formula.Clauses[unitClauseIndx]
-
-		if len(unitClause.Instances) != 1 {
-			return fmt.Errorf("error: non-unit clause being treated as a unit clause!")
-		}
-
-		var unitVarIndx VarIndex
-		var unitInstanceState VarState
-
-		//There's only one instance so this should only run once
-		for varIndx, instanceState := range unitClause.Instances {
-			unitInstanceState = instanceState
-			unitVarIndx = varIndx
-		}
+		delete(s.PureVariables, unitVarIndx)
 
 		s.DeletedClauses[unitClauseIndx] = true
-		delete(s.PureVariables, unitVarIndx)
 		s.AssignmentPropagation(unitVarIndx, unitInstanceState)
 	}
 	return nil
 }
 
-//Note that this can be a destructive operation
-//This can also set a formula to unsat
+// Note that this can be a destructive operation
+// This can also set a formula to unsat
 func (s *BooleanFormulaState) AssignmentPropagation(newlyAsgnVar VarIndex, propagatedState VarState) {
 
 	s.Assignments[newlyAsgnVar] = propagatedState
 
 	for clauseIndx, instanceState := range s.Formula.Vars[newlyAsgnVar].ClauseAppearances {
-		if _, ok := s.DeletedClauses[clauseIndx]; !ok {
+		if _, ok := s.DeletedClauses[clauseIndx]; ok {
 			continue
 		}
 		if instanceState == propagatedState {
@@ -57,6 +50,7 @@ func (s *BooleanFormulaState) AssignmentPropagation(newlyAsgnVar VarIndex, propa
 
 	//check watch literals of other clauses
 	for _, clauseIndx := range s.VariablesKeepingTrackOfWhereTheyreBeingWatched[newlyAsgnVar] {
+
 		var otherWatchedLiteral VarIndex
 		var isRight bool
 
@@ -93,20 +87,22 @@ func (s *BooleanFormulaState) AssignmentPropagation(newlyAsgnVar VarIndex, propa
 
 		if !foundReplacementWatchedLiteral { //That means this clause has become a unit clause! (┛◉Д◉)┛彡┻━┻
 			delete(s.ClauseWatchedLiterals, clauseIndx)
-			s.UnitClauses[clauseIndx] = true
+			s.UnitClauses[clauseIndx] = otherWatchedLiteral
 		}
 	}
 
 	delete(s.VariablesKeepingTrackOfWhereTheyreBeingWatched, newlyAsgnVar)
 }
 
-//TODO: we don't currently handle state well such that
-//we can easily detect new pure literals AFTER initial parsing
+// TODO: we don't currently handle state well such that
+// we can easily detect new pure literals AFTER initial parsing
 func (s *BooleanFormulaState) PureLiteralElimination() {
 	for varIndx, varState := range s.PureVariables {
 		if !s.Sat {
 			return
 		}
+		// fmt.Printf("Pure literal elimination of V%v ", varIndx)
+
 		delete(s.PureVariables, varIndx)
 		s.AssignmentPropagation(varIndx, varState)
 	}

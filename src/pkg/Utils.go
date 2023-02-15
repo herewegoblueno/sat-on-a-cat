@@ -64,7 +64,7 @@ func (b *BooleanFormulaState) Copy() *BooleanFormulaState {
 		Assignments:           make(map[VarIndex]VarState),
 		ClauseWatchedLiterals: make(map[ClauseIndex]WatchedLiterals),
 		DeletedClauses:        make(map[ClauseIndex]bool),
-		UnitClauses:           make(map[ClauseIndex]bool),
+		UnitClauses:           make(map[ClauseIndex]VarIndex),
 		PureVariables:         make(map[VarIndex]VarState),
 		Sat:                   b.Sat,
 	}

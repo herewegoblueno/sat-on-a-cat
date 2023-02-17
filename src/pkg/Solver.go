@@ -36,7 +36,12 @@ func (b *BooleanFormula) SolveFormula(initialState *BooleanFormulaState) (bool, 
 	fmt.Println("now solve", initialState.Sat)
 
 	//Now solve the state...
-	return initialState.SolveFromState()
+	solveable, solveableState := initialState.SolveFromState()
+	if solveable {
+		test := solveableState.CheckAssignmentIsSat() // For debugging purposes to see whether our assignment even work
+		fmt.Println("is this sat?", test)
+	}
+	return solveable, solveableState
 }
 
 func (state *BooleanFormulaState) SolveFromState() (bool, *BooleanFormulaState) {
@@ -50,8 +55,6 @@ func (state *BooleanFormulaState) SolveFromState() (bool, *BooleanFormulaState) 
 		return false, nil
 	}
 
-	// fmt.Println("starting pure literal elimination")
-
 	//Clear out the unit clauses first
 	state.PureLiteralElimination()
 	if !state.Sat {
@@ -63,31 +66,58 @@ func (state *BooleanFormulaState) SolveFromState() (bool, *BooleanFormulaState) 
 		return true, state
 	}
 
+	positiveState := state.Copy()
 	// TODO: could make a better heuristic as opposed to arbitrarily picking a variable to branch on
 	// loop over the variables in formula
 	for idx, _ := range state.Formula.Vars {
 		// fmt.Println("examining candidate", idx)
 		// check if the variable is assigned
-		_, ok := state.Assignments[idx]
+		fmt.Println("looking for sat on this", state.Assignments, idx)
+		_, ok := positiveState.Assignments[idx]
 		// if not assigned
 		if !ok {
 			// fmt.Println("examining candidate that is not assigned", idx)
-			assignment := state.AssignmentFromDynamicLargestCombinedSum(idx)
-			copyOfState := state.Copy()
+			assignment := positiveState.AssignmentFromDynamicLargestCombinedSum(idx)
 
-			state.AssignmentPropagation(idx, assignment)
-			solved, solvedState := state.SolveFromState()
+			fmt.Println("guessing var", idx, assignment)
+
+			positiveState.AssignmentPropagation(idx, assignment)
+			solved, solvedState := positiveState.SolveFromState()
+
+			fmt.Println("neg guessing var", idx, assignment, solved)
 
 			if solved {
 				return solved, solvedState
 			} else {
-				copyOfState.AssignmentPropagation(idx, Negate(assignment))
-				return copyOfState.SolveFromState()
+				negativeState := state.Copy()
+				negativeState.AssignmentPropagation(idx, Negate(assignment))
+				fmt.Println("unsat on both, look for other vars", state.Assignments, idx)
+				return negativeState.SolveFromState()
 			}
 		}
 	}
 
 	return false, state
+}
+
+func (state *BooleanFormulaState) CheckAssignmentIsSat() bool {
+	for clauseIdx, clause := range state.Formula.Clauses {
+		satisfiedClause := false
+		for literal, asgn := range clause.Instances {
+			if state.Assignments[literal] == asgn {
+				// found one satisfying
+				satisfiedClause = true
+				break
+			}
+		}
+		if !satisfiedClause {
+			// curr assignments don't satisfy clause
+			fmt.Println("error: assignment doesn't satisfy", clauseIdx, state.Formula.Clauses[clauseIdx])
+			return false
+		}
+	}
+	// if it reaches here, every clause is satisfied, so it is SAT
+	return true
 }
 
 func (state *BooleanFormulaState) AssignmentFromDynamicLargestCombinedSum(variable VarIndex) VarState {

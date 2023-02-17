@@ -1,2 +1,2 @@
 ./compile.sh
-./run.sh toy_test.cnf
+./run.sh cnf_tests/unsat/42_unsat.cnf

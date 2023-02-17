@@ -1,5 +1,9 @@
 package pkg
 
+import (
+	"fmt"
+)
+
 // Does all of it at once
 func (s *BooleanFormulaState) UnitClauseElimination() error {
 
@@ -22,6 +26,7 @@ func (s *BooleanFormulaState) UnitClauseElimination() error {
 		delete(s.PureVariables, unitVarIndx)
 
 		s.DeletedClauses[unitClauseIndx] = true
+		fmt.Println("UnitClause assignment propagation", unitClauseIndx, unitVarIndx)
 		s.AssignmentPropagation(unitVarIndx, unitInstanceState)
 	}
 	return nil
@@ -32,17 +37,27 @@ func (s *BooleanFormulaState) UnitClauseElimination() error {
 func (s *BooleanFormulaState) AssignmentPropagation(newlyAsgnVar VarIndex, propagatedState VarState) {
 
 	s.Assignments[newlyAsgnVar] = propagatedState
+	fmt.Println("assigned propagation", s.Assignments)
 
+	// fmt.Println("clause appearances", s.Formula.Vars[newlyAsgnVar].ClauseAppearances)
 	for clauseIndx, instanceState := range s.Formula.Vars[newlyAsgnVar].ClauseAppearances {
-		if _, ok := s.DeletedClauses[clauseIndx]; ok {
+		_, ok := s.DeletedClauses[clauseIndx]
+		// fmt.Println("is this clause deleted", clauseIndx, ok)
+		if ok {
 			continue
 		}
 		if instanceState == propagatedState {
+			// fmt.Println("it matched", instanceState, propagatedState)
 			s.DeletedClauses[clauseIndx] = true
 		} else {
 			//If it's a unit clause and there's a mismatch, then we're unsat
-			if _, ok := s.UnitClauses[clauseIndx]; ok {
+			// fmt.Println("okay, now we are here on UnitClauses", s.UnitClauses, clauseIndx, s.ClauseWatchedLiterals[clauseIndx], s.ClauseWatchedLiterals)
+			// fmt.Println("what are the watch literals?", s.VariablesKeepingTrackOfWhereTheyreBeingWatched[newlyAsgnVar])
+			if unitLit, ok := s.UnitClauses[clauseIndx]; ok && unitLit == newlyAsgnVar {
 				s.Sat = false
+				// debug.PrintStack()
+				fmt.Println("what is unsat", newlyAsgnVar, clauseIndx)
+				fmt.Println("UNSAT")
 				return
 			}
 		}
@@ -104,6 +119,7 @@ func (s *BooleanFormulaState) PureLiteralElimination() {
 		// fmt.Printf("Pure literal elimination of V%v ", varIndx)
 
 		delete(s.PureVariables, varIndx)
+		fmt.Println("PureLiteral assignment propagation")
 		s.AssignmentPropagation(varIndx, varState)
 	}
 }

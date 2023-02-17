@@ -115,6 +115,8 @@ func ParseCNFFile(filename string) (*BooleanFormula, *BooleanFormulaState, error
 				}
 			}
 
+			fmt.Println("this is the clause", currClause.Instances, len(currClause.Instances))
+
 			//Only add the clause if it's not empty
 			clauseLength := len(currClause.Instances)
 			if clauseLength > 0 {

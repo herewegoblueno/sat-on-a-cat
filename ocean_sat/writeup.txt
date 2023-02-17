@@ -1,0 +1,15 @@
+## In four or so sentences, compare how quickly Forge is able to find an instance for some spec from a previous homework using your solver compared to the default one (with the above line removed).
+
+In test_forge.rkt, we wrote the isRing pred (one edge in and one edge out, all nodes connected).
+sat instance: when running isRing for exactly 4 nodes, our solver takes 36386 ms, while forge takes 9 ms.
+unsat instance: when running not isRing for exactly 1 Node (unsat because node definition requires a next), our solver was getting #f and didn't print out a time, while forge takes 0 ms.
+
+## Testing for SAT Solver:
+
+In order to prove that our SAT Solver works, we have included both unit testing as well as system testing to ensure that individual functions and the solver works as a whole. 
+
+To run the indiviudual functions, please run "python3 test_solver.py", which will run the function testing for all the individual functions. Notice that there are no tests for the function 'solve', as we think that testing for solve is equivalent to testing the whole system, which is covered by our system tests.
+
+To run the system tests, please run "./test_cases.sh {sat/unsat}", which should take all the system test cases and run them. Specifically, to run test cases that are satisfiable, run "./test_cases.sh sat", and to run test cases that are unsatisfiable, run "./test_cases.sh unsat". All the test cases for SAT should return SAT, and all the test cases for UNSAT should return UNSAT.
+
+We also test that the output of our solver is consistent and actually satisfies the formula. These are called at the end of our "solver.py", and embeds its information as comments in the output. If it is satsifiable, the solution should be both consistent and satisfies the formula. If it is not satisfiable, then the solution should not be consistent and does not satisfy the formula. In order to ensure that these test functions are behaving as we should be (and therefore reliable tests of our main function), the test for these functions can be found in "test_solver.py". 

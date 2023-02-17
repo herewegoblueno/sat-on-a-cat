@@ -52,7 +52,7 @@ func ParseCNFFile(filename string) (*BooleanFormula, *BooleanFormulaState, error
 			}
 			for _, tok := range tokens {
 				// skip at the end of the line, don't bother converting to int
-				if tok == "0" {
+				if tok == "0" || tok == "" {
 					continue
 				}
 
@@ -114,8 +114,6 @@ func ParseCNFFile(filename string) (*BooleanFormula, *BooleanFormulaState, error
 					}
 				}
 			}
-
-			fmt.Println("this is the clause", currClause.Instances, len(currClause.Instances))
 
 			//Only add the clause if it's not empty
 			clauseLength := len(currClause.Instances)

@@ -1,7 +1,6 @@
 package pkg
 
 import (
-	"fmt"
 	"time"
 )
 
@@ -17,11 +16,7 @@ func StopTimer() {
 	isRunning = false
 }
 
-func GetElapsedSeconds() (error, int) {
-	if !isRunning {
-		return fmt.Errorf("Timer hasn't been started yet!"), -1
-	}
-
-	var elapsed int = time.Now().Second() - startingTime.Second()
-	return nil, elapsed
+func GetElapsedNano() float64 {
+	var elapsed int = time.Now().Nanosecond() - startingTime.Nanosecond()
+	return float64(elapsed)
 }

@@ -1,14 +1,10 @@
 package pkg
 
-import (
-	"fmt"
-)
-
 // Does all of it at once
 func (s *BooleanFormulaState) UnitClauseElimination() error {
 
-	// fmt.Println("num of unit clauses", len(s.UnitClauses))
-	// fmt.Println("tell me the unit clauses", s.UnitClauses)
+	// DebugLine("num of unit clauses", len(s.UnitClauses))
+	// DebugLine("tell me the unit clauses", s.UnitClauses)
 	for len(s.UnitClauses) != 0 && s.Sat {
 		//Pick one at a time
 		var unitClauseIndx ClauseIndex
@@ -20,13 +16,13 @@ func (s *BooleanFormulaState) UnitClauseElimination() error {
 		unitVarIndx := s.UnitClauses[unitClauseIndx]
 		unitInstanceState := s.Formula.Clauses[unitClauseIndx].Instances[unitVarIndx]
 
-		// fmt.Printf("Unit clause elimination of V%v in clause C%v \n", unitVarIndx, unitClauseIndx)
+		// DebugFormat("Unit clause elimination of V%v in clause C%v \n", unitVarIndx, unitClauseIndx)
 
 		delete(s.UnitClauses, unitClauseIndx)
 		delete(s.PureVariables, unitVarIndx)
 
 		s.DeletedClauses[unitClauseIndx] = true
-		fmt.Println("UnitClause assignment propagation", unitClauseIndx, unitVarIndx)
+		//DebugLine("UnitClause assignment propagation", unitClauseIndx, unitVarIndx)
 		s.AssignmentPropagation(unitVarIndx, unitInstanceState)
 	}
 	return nil
@@ -37,27 +33,19 @@ func (s *BooleanFormulaState) UnitClauseElimination() error {
 func (s *BooleanFormulaState) AssignmentPropagation(newlyAsgnVar VarIndex, propagatedState VarState) {
 
 	s.Assignments[newlyAsgnVar] = propagatedState
-	fmt.Println("assigned propagation", s.Assignments)
+	//DebugLine("assigned propagation", s.Assignments)
 
-	// fmt.Println("clause appearances", s.Formula.Vars[newlyAsgnVar].ClauseAppearances)
 	for clauseIndx, instanceState := range s.Formula.Vars[newlyAsgnVar].ClauseAppearances {
 		_, ok := s.DeletedClauses[clauseIndx]
-		// fmt.Println("is this clause deleted", clauseIndx, ok)
 		if ok {
 			continue
 		}
 		if instanceState == propagatedState {
-			// fmt.Println("it matched", instanceState, propagatedState)
 			s.DeletedClauses[clauseIndx] = true
 		} else {
-			//If it's a unit clause and there's a mismatch, then we're unsat
-			// fmt.Println("okay, now we are here on UnitClauses", s.UnitClauses, clauseIndx, s.ClauseWatchedLiterals[clauseIndx], s.ClauseWatchedLiterals)
-			// fmt.Println("what are the watch literals?", s.VariablesKeepingTrackOfWhereTheyreBeingWatched[newlyAsgnVar])
+			//If it's a unit clause with the same literal and there's a sign mismatch, then we're unsat
 			if unitLit, ok := s.UnitClauses[clauseIndx]; ok && unitLit == newlyAsgnVar {
 				s.Sat = false
-				// debug.PrintStack()
-				fmt.Println("what is unsat", newlyAsgnVar, clauseIndx)
-				fmt.Println("UNSAT")
 				return
 			}
 		}
@@ -116,10 +104,10 @@ func (s *BooleanFormulaState) PureLiteralElimination() {
 		if !s.Sat {
 			return
 		}
-		// fmt.Printf("Pure literal elimination of V%v ", varIndx)
+		// DebugFormat("Pure literal elimination of V%v ", varIndx)
 
 		delete(s.PureVariables, varIndx)
-		fmt.Println("PureLiteral assignment propagation")
+		DebugLine("PureLiteral assignment propagation")
 		s.AssignmentPropagation(varIndx, varState)
 	}
 }

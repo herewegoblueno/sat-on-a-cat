@@ -1,2 +1,2 @@
 ./compile.sh
-./run.sh cnf_tests/unsat/42_unsat.cnf
+./run.sh input/C140.cnf

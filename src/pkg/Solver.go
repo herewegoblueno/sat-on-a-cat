@@ -1,7 +1,5 @@
 package pkg
 
-import "fmt"
-
 func (b *BooleanFormula) SolveFormula(initialState *BooleanFormulaState) (bool, *BooleanFormulaState) {
 	//First assign everyone who has a sign larger than 1 some watched variables...
 	for clauseIndex, clause := range b.Clauses {
@@ -28,20 +26,15 @@ func (b *BooleanFormula) SolveFormula(initialState *BooleanFormulaState) (bool, 
 		initialState.ClauseWatchedLiterals[clauseIndex] = watchedLiteralHolder
 	}
 
-	fmt.Println("before solving state")
+	DebugLine("before solving state")
 	PrintBooleanFormulaState(initialState)
-	fmt.Println("map of ClauseWatchedLiterals", initialState.ClauseWatchedLiterals)
-	fmt.Println("map of VariablesKeepingTrackOfWhereTheyreBeingWatched", initialState.VariablesKeepingTrackOfWhereTheyreBeingWatched)
-	fmt.Println("map of UnitClauses", initialState.UnitClauses)
-	fmt.Println("now solve", initialState.Sat)
+	DebugLine("map of ClauseWatchedLiterals", initialState.ClauseWatchedLiterals)
+	DebugLine("map of VariablesKeepingTrackOfWhereTheyreBeingWatched", initialState.VariablesKeepingTrackOfWhereTheyreBeingWatched)
+	DebugLine("map of UnitClauses", initialState.UnitClauses)
+	DebugLine("now solve", initialState.Sat)
 
 	//Now solve the state...
-	solveable, solveableState := initialState.SolveFromState()
-	if solveable {
-		test := solveableState.CheckAssignmentIsSat() // For debugging purposes to see whether our assignment even work
-		fmt.Println("is this sat?", test)
-	}
-	return solveable, solveableState
+	return initialState.SolveFromState()
 }
 
 func (state *BooleanFormulaState) SolveFromState() (bool, *BooleanFormulaState) {
@@ -66,58 +59,35 @@ func (state *BooleanFormulaState) SolveFromState() (bool, *BooleanFormulaState) 
 		return true, state
 	}
 
-	positiveState := state.Copy()
 	// TODO: could make a better heuristic as opposed to arbitrarily picking a variable to branch on
-	// loop over the variables in formula
-	for idx, _ := range state.Formula.Vars {
-		// fmt.Println("examining candidate", idx)
-		// check if the variable is assigned
-		fmt.Println("looking for sat on this", state.Assignments, idx)
-		_, ok := positiveState.Assignments[idx]
-		// if not assigned
+	// loop over the variables in formula for branching
+	for idx := range state.Formula.Vars {
+		_, ok := state.Assignments[idx]
+
 		if !ok {
-			// fmt.Println("examining candidate that is not assigned", idx)
-			assignment := positiveState.AssignmentFromDynamicLargestCombinedSum(idx)
-
-			fmt.Println("guessing var", idx, assignment)
-
-			positiveState.AssignmentPropagation(idx, assignment)
-			solved, solvedState := positiveState.SolveFromState()
-
-			fmt.Println("neg guessing var", idx, assignment, solved)
+			stateCopy := state.Copy()
+			assignment := stateCopy.AssignmentFromDynamicLargestCombinedSum(idx)
+			stateCopy.AssignmentPropagation(idx, assignment)
+			solved, solvedState := stateCopy.SolveFromState()
 
 			if solved {
 				return solved, solvedState
-			} else {
-				negativeState := state.Copy()
-				negativeState.AssignmentPropagation(idx, Negate(assignment))
-				fmt.Println("unsat on both, look for other vars", state.Assignments, idx)
-				return negativeState.SolveFromState()
+			}
+
+			stateCopy = state.Copy()
+			stateCopy.AssignmentPropagation(idx, Negate(assignment))
+			solved, solvedState = stateCopy.SolveFromState()
+
+			if solved {
+				return solved, solvedState
 			}
 		}
+
+		//This loop will bottom out if we've gone branched on all the
+		//unassigned variables and none of them lead to sat
 	}
 
 	return false, state
-}
-
-func (state *BooleanFormulaState) CheckAssignmentIsSat() bool {
-	for clauseIdx, clause := range state.Formula.Clauses {
-		satisfiedClause := false
-		for literal, asgn := range clause.Instances {
-			if state.Assignments[literal] == asgn {
-				// found one satisfying
-				satisfiedClause = true
-				break
-			}
-		}
-		if !satisfiedClause {
-			// curr assignments don't satisfy clause
-			fmt.Println("error: assignment doesn't satisfy", clauseIdx, state.Formula.Clauses[clauseIdx])
-			return false
-		}
-	}
-	// if it reaches here, every clause is satisfied, so it is SAT
-	return true
 }
 
 func (state *BooleanFormulaState) AssignmentFromDynamicLargestCombinedSum(variable VarIndex) VarState {

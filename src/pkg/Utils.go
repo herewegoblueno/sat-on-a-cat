@@ -3,19 +3,19 @@ package pkg
 import "fmt"
 
 func (b *BooleanFormula) PrintBooleanFormula() {
-	fmt.Println("~~Printing Vars~~")
+	DebugLine("~~Printing Vars~~")
 	for _, v := range b.Vars {
 		PrintSATVar(v)
 	}
-	fmt.Println("")
-	fmt.Println("")
+	DebugLine("")
+	DebugLine("")
 
-	fmt.Println("~~Printing Clauses~~")
+	DebugLine("~~Printing Clauses~~")
 	for _, c := range b.Clauses {
 		PrintSATClause(c)
 	}
-	fmt.Println("")
-	fmt.Println("")
+	DebugLine("")
+	DebugLine("")
 }
 
 func PrintVarState(v VarState) string {
@@ -27,19 +27,19 @@ func PrintVarState(v VarState) string {
 }
 
 func PrintSATClause(c *SATClause) {
-	fmt.Printf("C%v \n", c.Index)
+	DebugFormat("C%v \n", c.Index)
 	for varIndx, varState := range c.Instances {
-		fmt.Printf("V%v: %v   ", varIndx, PrintVarState(varState))
+		DebugFormat("V%v: %v   ", varIndx, PrintVarState(varState))
 	}
-	fmt.Println("\n===")
+	DebugLine("\n===")
 }
 
 func PrintSATVar(v *SATVar) {
-	fmt.Printf("V%v \n", v.Index)
+	DebugFormat("V%v \n", v.Index)
 	for cIndx, varState := range v.ClauseAppearances {
-		fmt.Printf("C%v: %v   ", cIndx, PrintVarState(varState))
+		DebugFormat("C%v: %v   ", cIndx, PrintVarState(varState))
 	}
-	fmt.Println("\n===")
+	DebugLine("\n===")
 }
 
 func PrintBooleanFormulaState(s *BooleanFormulaState) {
@@ -47,15 +47,15 @@ func PrintBooleanFormulaState(s *BooleanFormulaState) {
 	irrelevantVariables := "Irrelevant Variables: "
 	for varIndx := range s.Formula.Vars {
 		if assignmnet, ok := s.Assignments[varIndx]; ok {
-			fmt.Printf("V%v: %v    ", varIndx, PrintVarState(assignmnet))
+			DebugFormat("V%v: %v    ", varIndx, PrintVarState(assignmnet))
 		} else {
 			irrelevantVariables += fmt.Sprintf("V%v, ", varIndx)
 		}
 	}
-	fmt.Println("")
-	fmt.Println("")
-	fmt.Println(irrelevantVariables)
-	fmt.Println("")
+	DebugLine("")
+	DebugLine("")
+	DebugLine(irrelevantVariables)
+	DebugLine("")
 }
 
 func (b *BooleanFormulaState) Copy() *BooleanFormulaState {

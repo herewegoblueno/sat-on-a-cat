@@ -64,7 +64,9 @@ func PrintBooleanFormulaState(s *BooleanFormulaState) {
 
 func (b *BooleanFormulaState) Copy() *BooleanFormulaState {
 	new_b := BooleanFormulaState{
+		Parent:                b,
 		Formula:               b.Formula,
+		Depth:                 b.Depth + 1,
 		Assignments:           make(map[VarIndex]VarState),
 		ClauseWatchedLiterals: make(map[ClauseIndex]WatchedLiterals),
 		VariablesKeepingTrackOfWhereTheyreBeingWatched: make(map[VarIndex][]ClauseIndex),
@@ -104,6 +106,9 @@ func Negate(v VarState) VarState {
 
 func (formula *BooleanFormula) ShuffleFormulaVariableBranchingOrder() {
 
+	//Copying over
+	formula.VarBranchingOrderShuffled = append([]VarIndex(nil), formula.VarBranchingOrderOriginal...)
+
 	if formula.VarBranchingOrderShuffleChance == 0 || formula.VarBranchingOrderShuffleDistance == 0 {
 		return
 	}
@@ -114,7 +119,7 @@ func (formula *BooleanFormula) ShuffleFormulaVariableBranchingOrder() {
 	}
 
 	shuffleCounter := 0
-	for index := range formula.VarBranchingOrder {
+	for index := range formula.VarBranchingOrderShuffled {
 		if rand.Intn(100) > formula.VarBranchingOrderShuffleChance {
 			continue
 		}
@@ -123,7 +128,7 @@ func (formula *BooleanFormula) ShuffleFormulaVariableBranchingOrder() {
 		newIndex := index + offset
 
 		//Making sure its in bounds...
-		if (newIndex) >= len(formula.VarBranchingOrder) {
+		if (newIndex) >= len(formula.VarBranchingOrderShuffled) {
 			newIndex = index - offset
 		}
 
@@ -132,7 +137,7 @@ func (formula *BooleanFormula) ShuffleFormulaVariableBranchingOrder() {
 		}
 
 		shuffleCounter++
-		formula.VarBranchingOrder[index], formula.VarBranchingOrder[newIndex] = formula.VarBranchingOrder[newIndex], formula.VarBranchingOrder[index]
+		formula.VarBranchingOrderShuffled[index], formula.VarBranchingOrderShuffled[newIndex] = formula.VarBranchingOrderShuffled[newIndex], formula.VarBranchingOrderShuffled[index]
 	}
-	DebugFormat("%d shuffles made usign shuffle radius of %d\n", shuffleCounter, shuffleRadius)
+	//DebugFormat("%d shuffles made usign shuffle radius of %d\n", shuffleCounter, shuffleRadius)
 }

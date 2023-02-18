@@ -31,6 +31,7 @@ func main() {
 	runCounter := 0
 	runsBeforeIncreasingBacktrackingRate := 6
 	isSat, runOutOfBacktracks, state := false, true, &sat.BooleanFormulaState{}
+	formulaState.StateSetUp()
 
 	for runOutOfBacktracks {
 		runCounter++

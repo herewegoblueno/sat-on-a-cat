@@ -29,6 +29,7 @@ func ParseCNFFile(filename string) (*BooleanFormula, *BooleanFormulaState, error
 		make(map[VarIndex]*SATVar),
 		make(map[ClauseIndex]*SATClause),
 		make([]VarIndex, 0),
+		make([]VarIndex, 0),
 		0.7,  //VarBranchingOrderShuffleDistance[0, 1]
 		50,   //VarBranchingOrderShuffleChance[0, 100]
 		0,    //BacktrackCounter
@@ -37,15 +38,24 @@ func ParseCNFFile(filename string) (*BooleanFormula, *BooleanFormulaState, error
 	}
 
 	initialState := BooleanFormulaState{
+		true,
+		nil,
 		&currFormula,
+
+		0,
+		make([]VarIndex, 0),
+		nil,
+
 		make(map[VarIndex]VarState),
 		make(map[ClauseIndex]WatchedLiterals),
 		make(map[VarIndex][]ClauseIndex),
 		make(map[ClauseIndex]bool),
 		make(map[ClauseIndex]VarIndex),
 		make(map[VarIndex]VarState),
-		true,
 	}
+
+	initialState.Parent = &initialState
+	initialState.VarBranchingOrderPointer = &initialState.VarBranchingOrderLocal
 
 	clauseNum := 0
 	for scanner.Scan() { //Line by line...
@@ -83,7 +93,7 @@ func ParseCNFFile(filename string) (*BooleanFormula, *BooleanFormulaState, error
 					}
 					initialState.PureVariables[currVarIndex] = DEFAULT
 					currFormula.Vars[currVarIndex] = currVar
-					currFormula.VarBranchingOrder = append(currFormula.VarBranchingOrder, VarIndex(currVarIndex))
+					currFormula.VarBranchingOrderOriginal = append(currFormula.VarBranchingOrderOriginal, VarIndex(currVarIndex))
 				}
 
 				var newState VarState
@@ -142,9 +152,9 @@ func ParseCNFFile(filename string) (*BooleanFormula, *BooleanFormulaState, error
 
 	//Set the brancing order based on the number of clauses that variables come in
 	//(so we branch on variables that matter more)
-	sort.Slice(currFormula.VarBranchingOrder, func(i, j int) bool {
-		iApprearances := len(currFormula.Vars[currFormula.VarBranchingOrder[i]].ClauseAppearances)
-		jApprearances := len(currFormula.Vars[currFormula.VarBranchingOrder[j]].ClauseAppearances)
+	sort.Slice(currFormula.VarBranchingOrderOriginal, func(i, j int) bool {
+		iApprearances := len(currFormula.Vars[currFormula.VarBranchingOrderOriginal[i]].ClauseAppearances)
+		jApprearances := len(currFormula.Vars[currFormula.VarBranchingOrderOriginal[j]].ClauseAppearances)
 		return iApprearances > jApprearances
 	})
 

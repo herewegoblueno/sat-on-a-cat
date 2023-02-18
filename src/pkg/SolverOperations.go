@@ -18,10 +18,11 @@ func (s *BooleanFormulaState) UnitClauseElimination() error {
 		unitVarIndx := s.UnitClauses[unitClauseIndx]
 		unitInstanceState := s.Formula.Clauses[unitClauseIndx].Instances[unitVarIndx]
 
-		//DebugFormat("Unit clause elimination of V%v in clause C%v \n", unitVarIndx, unitClauseIndx)
+		// if _, ok := s.PureVariables[unitVarIndx]; ok {
+		// 	DebugFormat("Unit (+ pure) clause elimination of V%v in clause C%v \n", unitVarIndx, unitClauseIndx)
+		// }
 
 		delete(s.UnitClauses, unitClauseIndx)
-		delete(s.PureVariables, unitVarIndx)
 
 		s.DeletedClauses[unitClauseIndx] = true
 		//DebugLine("UnitClause assignment propagation", unitClauseIndx, unitVarIndx)
@@ -35,6 +36,7 @@ func (s *BooleanFormulaState) UnitClauseElimination() error {
 func (s *BooleanFormulaState) AssignmentPropagation(newlyAsgnVar VarIndex, propagatedState VarState) {
 
 	s.Assignments[newlyAsgnVar] = propagatedState
+	delete(s.PureVariables, newlyAsgnVar)
 	//DebugLine("assigned propagation", s.Assignments)
 
 	for clauseIndx, instanceState := range s.Formula.Vars[newlyAsgnVar].ClauseAppearances {
@@ -105,14 +107,12 @@ func (s *BooleanFormulaState) AssignmentPropagation(newlyAsgnVar VarIndex, propa
 	delete(s.VariablesKeepingTrackOfWhereTheyreBeingWatched, newlyAsgnVar)
 }
 
-// TODO: we don't currently handle state well such that
-// we can easily detect new pure literals AFTER initial parsing
 func (s *BooleanFormulaState) PureLiteralElimination() {
 	for varIndx, varState := range s.PureVariables {
 		if !s.Sat {
 			return
 		}
-		// DebugFormat("Pure literal elimination of V%v ", varIndx)
+		DebugFormat("Pure literal elimination of V%v \n", varIndx)
 
 		delete(s.PureVariables, varIndx)
 		s.AssignmentPropagation(varIndx, varState)

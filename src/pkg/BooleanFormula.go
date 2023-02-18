@@ -30,7 +30,8 @@ type BooleanFormula struct {
 	Vars    map[VarIndex]*SATVar       //Immutable after parsing
 	Clauses map[ClauseIndex]*SATClause //Immutable after parsing
 
-	VarBranchingOrder                []VarIndex
+	VarBranchingOrderOriginal        []VarIndex
+	VarBranchingOrderShuffled        []VarIndex
 	VarBranchingOrderShuffleDistance float64 //[0, 1]
 	VarBranchingOrderShuffleChance   int     //[0, 100]
 
@@ -44,14 +45,20 @@ type WatchedLiterals struct {
 	right VarIndex
 }
 
+//--Mutable and copied during branching
 type BooleanFormulaState struct {
-	//--Mutable and copied during branching
-	Formula                                        *BooleanFormula
+	Sat     bool `default:true`
+	Parent  *BooleanFormulaState
+	Formula *BooleanFormula
+
+	Depth                    int
+	VarBranchingOrderLocal   []VarIndex
+	VarBranchingOrderPointer *[]VarIndex //Can point to parent's VarBranchingOrderLocal, or own
+
 	Assignments                                    map[VarIndex]VarState
 	ClauseWatchedLiterals                          map[ClauseIndex]WatchedLiterals //Won't contain unit clauses
 	VariablesKeepingTrackOfWhereTheyreBeingWatched map[VarIndex][]ClauseIndex
 	DeletedClauses                                 map[ClauseIndex]bool     //Bootleg set
 	UnitClauses                                    map[ClauseIndex]VarIndex //Bootleg set
 	PureVariables                                  map[VarIndex]VarState
-	Sat                                            bool `default:true`
 }

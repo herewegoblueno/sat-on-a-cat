@@ -112,7 +112,7 @@ func (s *BooleanFormulaState) PureLiteralElimination() {
 		if !s.Sat {
 			return
 		}
-		DebugFormat("Pure literal elimination of V%v \n", varIndx)
+		//DebugFormat("Pure literal elimination of V%v \n", varIndx)
 
 		delete(s.PureVariables, varIndx)
 		s.AssignmentPropagation(varIndx, varState)

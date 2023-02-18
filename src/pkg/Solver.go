@@ -1,5 +1,10 @@
 package pkg
 
+import (
+	"math/rand"
+	"sort"
+)
+
 //Do some operations that shouldn't need to be repeated with every solver reset
 //If these already make the formula unsat, it will be caught down the line...
 func (state *BooleanFormulaState) StateSetUp() {
@@ -25,7 +30,8 @@ func (state *BooleanFormulaState) StateSetUp() {
 func (b *BooleanFormula) SolveFormula(initialState *BooleanFormulaState) (bool, bool, *BooleanFormulaState) {
 
 	//Shuffle to add a bit of randomness
-	b.ShuffleFormulaVariableBranchingOrder()
+	b.CopyShuffledFormulaVariableBranchingOrder(initialState)
+	initialState.VarBranchingOrderPointer = &initialState.VarBranchingOrderLocal
 
 	// DebugLine("before solving state")
 	// PrintBooleanFormulaState(initialState)
@@ -64,7 +70,23 @@ func (state *BooleanFormulaState) SolveFromState() (bool, bool, *BooleanFormulaS
 		return true, false, state
 	}
 
-	for _, varIdx := range state.Formula.VarBranchingOrderShuffled {
+	//First, since it's time to branch, maybe we shoudl check if we should make a new iteration order...
+	if (state.Depth % 50) == 0 { //TODO: ooo magic numbers...
+		state.VarBranchingOrderLocal = append([]VarIndex(nil), *state.Parent.VarBranchingOrderPointer...)
+		state.VarBranchingOrderPointer = &state.VarBranchingOrderLocal
+		relevantAppearances := state.CountRelevantAppearances()
+
+		sort.Slice(state.VarBranchingOrderLocal, func(i, j int) bool {
+			iApprearances := (*relevantAppearances)[state.VarBranchingOrderLocal[i]]
+			jApprearances := (*relevantAppearances)[state.VarBranchingOrderLocal[j]]
+			return iApprearances > jApprearances
+		})
+		//DebugLine("Made new order!", state.VarBranchingOrderLocal, relevantAppearances)
+		//DebugLine("Made new order!")
+
+	}
+
+	for _, varIdx := range *state.VarBranchingOrderPointer {
 		_, ok := state.Assignments[varIdx]
 
 		if !ok {
@@ -136,12 +158,12 @@ func (state *BooleanFormulaState) AssignmentFromDynamicLargestCombinedSum(variab
 	//If we realize this is pure, great news! Even if we don't end up finding sat, we can
 	//net our future sibling states get this information by passing it into our parent...
 	if negCount == 0 {
-		DebugFormat("Discovered that V%d is %v pure throughout %d instances!\n", variable, int(POS), posCount)
+		//DebugFormat("Discovered that V%d is %v pure throughout %d instances!\n", variable, int(POS), posCount)
 		state.Parent.PureVariables[variable] = POS
 		return true, false, POS
 
 	} else if posCount == 0 {
-		DebugFormat("Discovered that V%d is %v pure throughout %d instances!\n", variable, int(NEG), negCount)
+		//DebugFormat("Discovered that V%d is %v pure throughout %d instances!\n", variable, int(NEG), negCount)
 		state.Parent.PureVariables[variable] = NEG
 		return true, false, NEG
 	}
@@ -179,4 +201,24 @@ func (state *BooleanFormulaState) SetWatcherVariables() {
 		//DebugLine("given!", clauseIndex, watchedLiteralHolder)
 		state.ClauseWatchedLiterals[clauseIndex] = watchedLiteralHolder
 	}
+}
+
+//TODO: can this share work with AssignmentFromDynamicLargestCombinedSum?
+func (state *BooleanFormulaState) CountRelevantAppearances() *map[VarIndex]int {
+	appearances := make(map[VarIndex]int)
+	for varIndx, variable := range state.Formula.Vars {
+		if _, ok := state.Assignments[varIndx]; !ok {
+			appearances[varIndx] = 0
+			continue
+		}
+
+		count := rand.Intn(8) - 4 //TODO: just some janky randomness for now
+		for clauseIdx := range variable.ClauseAppearances {
+			if _, ok := state.DeletedClauses[clauseIdx]; !ok {
+				count += 1
+			}
+		}
+		appearances[varIndx] = count
+	}
+	return &appearances
 }

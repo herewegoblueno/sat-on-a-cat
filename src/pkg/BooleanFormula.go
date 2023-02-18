@@ -31,7 +31,6 @@ type BooleanFormula struct {
 	Clauses map[ClauseIndex]*SATClause //Immutable after parsing
 
 	VarBranchingOrderOriginal        []VarIndex
-	VarBranchingOrderShuffled        []VarIndex
 	VarBranchingOrderShuffleDistance float64 //[0, 1]
 	VarBranchingOrderShuffleChance   int     //[0, 100]
 

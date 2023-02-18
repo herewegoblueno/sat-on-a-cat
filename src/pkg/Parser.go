@@ -29,7 +29,6 @@ func ParseCNFFile(filename string) (*BooleanFormula, *BooleanFormulaState, error
 		make(map[VarIndex]*SATVar),
 		make(map[ClauseIndex]*SATClause),
 		make([]VarIndex, 0),
-		make([]VarIndex, 0),
 		0.7,  //VarBranchingOrderShuffleDistance[0, 1]
 		50,   //VarBranchingOrderShuffleChance[0, 100]
 		0,    //BacktrackCounter
@@ -55,7 +54,6 @@ func ParseCNFFile(filename string) (*BooleanFormula, *BooleanFormulaState, error
 	}
 
 	initialState.Parent = &initialState
-	initialState.VarBranchingOrderPointer = &initialState.VarBranchingOrderLocal
 
 	clauseNum := 0
 	for scanner.Scan() { //Line by line...

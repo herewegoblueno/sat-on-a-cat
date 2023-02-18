@@ -64,11 +64,13 @@ func PrintBooleanFormulaState(s *BooleanFormulaState) {
 
 func (b *BooleanFormulaState) Copy() *BooleanFormulaState {
 	new_b := BooleanFormulaState{
-		Parent:                b,
-		Formula:               b.Formula,
-		Depth:                 b.Depth + 1,
-		Assignments:           make(map[VarIndex]VarState),
-		ClauseWatchedLiterals: make(map[ClauseIndex]WatchedLiterals),
+		Parent:  b,
+		Formula: b.Formula,
+		Depth:   b.Depth + 1,
+		//VarBranchingOrderLocal is intentionally not copied over
+		VarBranchingOrderPointer: b.VarBranchingOrderPointer,
+		Assignments:              make(map[VarIndex]VarState),
+		ClauseWatchedLiterals:    make(map[ClauseIndex]WatchedLiterals),
 		VariablesKeepingTrackOfWhereTheyreBeingWatched: make(map[VarIndex][]ClauseIndex),
 		DeletedClauses: make(map[ClauseIndex]bool),
 		UnitClauses:    make(map[ClauseIndex]VarIndex),
@@ -104,10 +106,10 @@ func Negate(v VarState) VarState {
 	}
 }
 
-func (formula *BooleanFormula) ShuffleFormulaVariableBranchingOrder() {
+func (formula *BooleanFormula) CopyShuffledFormulaVariableBranchingOrder(state *BooleanFormulaState) {
 
 	//Copying over
-	formula.VarBranchingOrderShuffled = append([]VarIndex(nil), formula.VarBranchingOrderOriginal...)
+	state.VarBranchingOrderLocal = append([]VarIndex(nil), formula.VarBranchingOrderOriginal...)
 
 	if formula.VarBranchingOrderShuffleChance == 0 || formula.VarBranchingOrderShuffleDistance == 0 {
 		return
@@ -119,7 +121,7 @@ func (formula *BooleanFormula) ShuffleFormulaVariableBranchingOrder() {
 	}
 
 	shuffleCounter := 0
-	for index := range formula.VarBranchingOrderShuffled {
+	for index := range state.VarBranchingOrderLocal {
 		if rand.Intn(100) > formula.VarBranchingOrderShuffleChance {
 			continue
 		}
@@ -128,7 +130,7 @@ func (formula *BooleanFormula) ShuffleFormulaVariableBranchingOrder() {
 		newIndex := index + offset
 
 		//Making sure its in bounds...
-		if (newIndex) >= len(formula.VarBranchingOrderShuffled) {
+		if (newIndex) >= len(state.VarBranchingOrderLocal) {
 			newIndex = index - offset
 		}
 
@@ -137,7 +139,7 @@ func (formula *BooleanFormula) ShuffleFormulaVariableBranchingOrder() {
 		}
 
 		shuffleCounter++
-		formula.VarBranchingOrderShuffled[index], formula.VarBranchingOrderShuffled[newIndex] = formula.VarBranchingOrderShuffled[newIndex], formula.VarBranchingOrderShuffled[index]
+		state.VarBranchingOrderLocal[index], state.VarBranchingOrderLocal[newIndex] = state.VarBranchingOrderLocal[newIndex], state.VarBranchingOrderLocal[index]
 	}
 	//DebugFormat("%d shuffles made usign shuffle radius of %d\n", shuffleCounter, shuffleRadius)
 }

@@ -1,2 +1,2 @@
 ./compile.sh
-./run.sh input/C140.cnf
+./run.sh cs1710_input/sat/90_sat.cnf

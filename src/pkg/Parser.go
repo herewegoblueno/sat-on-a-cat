@@ -6,6 +6,7 @@ import (
 	"log"
 	"math"
 	"os"
+	"sort"
 	"strconv"
 	"strings"
 )
@@ -27,6 +28,12 @@ func ParseCNFFile(filename string) (*BooleanFormula, *BooleanFormulaState, error
 	currFormula := BooleanFormula{
 		make(map[VarIndex]*SATVar),
 		make(map[ClauseIndex]*SATClause),
+		make([]VarIndex, 0),
+		0.7,  //VarBranchingOrderShuffleDistance[0, 1]
+		50,   //VarBranchingOrderShuffleChance[0, 100]
+		0,    //BacktrackCounter
+		500,  //BacktrackingLimit
+		1000, //BacktrackingLimitIncreaseRate
 	}
 
 	initialState := BooleanFormulaState{
@@ -75,9 +82,10 @@ func ParseCNFFile(filename string) (*BooleanFormula, *BooleanFormulaState, error
 						DEFAULT, //Will get overwritten if it's wrong anyways
 					}
 					initialState.PureVariables[currVarIndex] = DEFAULT
+					currFormula.Vars[currVarIndex] = currVar
+					currFormula.VarBranchingOrder = append(currFormula.VarBranchingOrder, VarIndex(currVarIndex))
 				}
 
-				currFormula.Vars[currVarIndex] = currVar
 				var newState VarState
 
 				if var_as_num > 0 {
@@ -131,6 +139,14 @@ func ParseCNFFile(filename string) (*BooleanFormula, *BooleanFormulaState, error
 			clauseNum += 1
 		}
 	}
+
+	//Set the brancing order based on the number of clauses that variables come in
+	//(so we branch on variables that matter more)
+	sort.Slice(currFormula.VarBranchingOrder, func(i, j int) bool {
+		iApprearances := len(currFormula.Vars[currFormula.VarBranchingOrder[i]].ClauseAppearances)
+		jApprearances := len(currFormula.Vars[currFormula.VarBranchingOrder[j]].ClauseAppearances)
+		return iApprearances > jApprearances
+	})
 
 	if err := scanner.Err(); err != nil {
 		log.Fatal(err)

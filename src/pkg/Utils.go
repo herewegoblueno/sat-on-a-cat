@@ -1,6 +1,10 @@
 package pkg
 
-import "fmt"
+import (
+	"fmt"
+	"math"
+	"math/rand"
+)
 
 func (b *BooleanFormula) PrintBooleanFormula() {
 	DebugLine("~~Printing Vars~~")
@@ -96,4 +100,39 @@ func Negate(v VarState) VarState {
 	} else {
 		return POS
 	}
+}
+
+func (formula *BooleanFormula) ShuffleFormulaVariableBranchingOrder() {
+
+	if formula.VarBranchingOrderShuffleChance == 0 || formula.VarBranchingOrderShuffleDistance == 0 {
+		return
+	}
+
+	shuffleRadius := int(math.Floor(float64(len(formula.Vars)) * formula.VarBranchingOrderShuffleDistance))
+	if shuffleRadius == 0 {
+		return
+	}
+
+	shuffleCounter := 0
+	for index := range formula.VarBranchingOrder {
+		if rand.Intn(100) > formula.VarBranchingOrderShuffleChance {
+			continue
+		}
+
+		offset := (rand.Intn(shuffleRadius*2) - shuffleRadius)
+		newIndex := index + offset
+
+		//Making sure its in bounds...
+		if (newIndex) >= len(formula.VarBranchingOrder) {
+			newIndex = index - offset
+		}
+
+		if (newIndex) < 0 {
+			continue
+		}
+
+		shuffleCounter++
+		formula.VarBranchingOrder[index], formula.VarBranchingOrder[newIndex] = formula.VarBranchingOrder[newIndex], formula.VarBranchingOrder[index]
+	}
+	DebugFormat("%d shuffles made usign shuffle radius of %d\n", shuffleCounter, shuffleRadius)
 }

@@ -17,6 +17,6 @@ func StopTimer() {
 }
 
 func GetElapsedNano() float64 {
-	var elapsed int = time.Now().Nanosecond() - startingTime.Nanosecond()
+	var elapsed int = int(time.Now().UnixNano() - startingTime.UnixNano())
 	return float64(elapsed)
 }

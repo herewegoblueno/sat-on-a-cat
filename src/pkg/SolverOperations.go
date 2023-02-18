@@ -13,10 +13,12 @@ func (s *BooleanFormulaState) UnitClauseElimination() error {
 			break
 		}
 
+		//DebugLine(s.UnitClauses)
+
 		unitVarIndx := s.UnitClauses[unitClauseIndx]
 		unitInstanceState := s.Formula.Clauses[unitClauseIndx].Instances[unitVarIndx]
 
-		// DebugFormat("Unit clause elimination of V%v in clause C%v \n", unitVarIndx, unitClauseIndx)
+		//DebugFormat("Unit clause elimination of V%v in clause C%v \n", unitVarIndx, unitClauseIndx)
 
 		delete(s.UnitClauses, unitClauseIndx)
 		delete(s.PureVariables, unitVarIndx)
@@ -40,6 +42,7 @@ func (s *BooleanFormulaState) AssignmentPropagation(newlyAsgnVar VarIndex, propa
 		if ok {
 			continue
 		}
+
 		if instanceState == propagatedState {
 			s.DeletedClauses[clauseIndx] = true
 		} else {
@@ -60,6 +63,8 @@ func (s *BooleanFormulaState) AssignmentPropagation(newlyAsgnVar VarIndex, propa
 		if _, ok := s.DeletedClauses[clauseIndx]; ok {
 			continue
 		}
+
+		//DebugLine(clauseIndx, s.ClauseWatchedLiterals[clauseIndx])
 
 		if s.ClauseWatchedLiterals[clauseIndx].left == newlyAsgnVar {
 			isRight = false
@@ -84,11 +89,14 @@ func (s *BooleanFormulaState) AssignmentPropagation(newlyAsgnVar VarIndex, propa
 				}
 				s.VariablesKeepingTrackOfWhereTheyreBeingWatched[watchLiteralCandidateIndx] = append(s.VariablesKeepingTrackOfWhereTheyreBeingWatched[watchLiteralCandidateIndx], clauseIndx)
 				foundReplacementWatchedLiteral = true
+				//DebugLine(watchLiteralCandidateIndx)
+
 				break
 			}
 		}
 
 		if !foundReplacementWatchedLiteral { //That means this clause has become a unit clause! (┛◉Д◉)┛彡┻━┻
+			//DebugLine("making unit clause", clauseIndx, s.ClauseWatchedLiterals[clauseIndx])
 			delete(s.ClauseWatchedLiterals, clauseIndx)
 			s.UnitClauses[clauseIndx] = otherWatchedLiteral
 		}
@@ -107,7 +115,6 @@ func (s *BooleanFormulaState) PureLiteralElimination() {
 		// DebugFormat("Pure literal elimination of V%v ", varIndx)
 
 		delete(s.PureVariables, varIndx)
-		DebugLine("PureLiteral assignment propagation")
 		s.AssignmentPropagation(varIndx, varState)
 	}
 }

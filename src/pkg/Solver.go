@@ -1,6 +1,10 @@
 package pkg
 
-func (b *BooleanFormula) SolveFormula(initialState *BooleanFormulaState) (bool, *BooleanFormulaState) {
+func (b *BooleanFormula) SolveFormula(initialState *BooleanFormulaState) (bool, bool, *BooleanFormulaState) {
+
+	//Shuffle to add a bit of randomness
+	b.ShuffleFormulaVariableBranchingOrder()
+
 	//First assign everyone who has a sign larger than 1 some watched variables...
 	for clauseIndex, clause := range b.Clauses {
 
@@ -23,71 +27,92 @@ func (b *BooleanFormula) SolveFormula(initialState *BooleanFormulaState) (bool, 
 				break
 			}
 		}
+		//DebugLine("given!", clauseIndex, watchedLiteralHolder)
 		initialState.ClauseWatchedLiterals[clauseIndex] = watchedLiteralHolder
 	}
 
-	DebugLine("before solving state")
-	PrintBooleanFormulaState(initialState)
-	DebugLine("map of ClauseWatchedLiterals", initialState.ClauseWatchedLiterals)
-	DebugLine("map of VariablesKeepingTrackOfWhereTheyreBeingWatched", initialState.VariablesKeepingTrackOfWhereTheyreBeingWatched)
-	DebugLine("map of UnitClauses", initialState.UnitClauses)
-	DebugLine("now solve", initialState.Sat)
+	// DebugLine("before solving state")
+	// PrintBooleanFormulaState(initialState)
+	// DebugLine("map of ClauseWatchedLiterals", initialState.ClauseWatchedLiterals)
+	// DebugLine("map of VariablesKeepingTrackOfWhereTheyreBeingWatched", initialState.VariablesKeepingTrackOfWhereTheyreBeingWatched)
+	// DebugLine("map of UnitClauses", initialState.UnitClauses)
+	// DebugLine("now solve", initialState.Sat)
 
 	//Now solve the state...
 	return initialState.SolveFromState()
 }
 
-func (state *BooleanFormulaState) SolveFromState() (bool, *BooleanFormulaState) {
-	//Clear out the unit clauses first
+func (state *BooleanFormulaState) SolveFromState() (bool, bool, *BooleanFormulaState) {
+
 	if !state.Sat {
-		return false, state
+		return false, false, state
 	}
 
+	if state.Formula.BacktrackCounter > state.Formula.BacktrackingLimit {
+		return false, true, nil
+	}
+
+	//Clear out the unit clauses first
 	err := state.UnitClauseElimination()
 	if !state.Sat || err != nil {
-		return false, nil
+		return false, false, nil
 	}
 
 	//Clear out the unit clauses first
 	state.PureLiteralElimination()
 	if !state.Sat {
-		return false, nil
+		return false, false, nil
 	}
 
 	// if there are no more clauses, terminate before branching
 	if len(state.DeletedClauses) == len(state.Formula.Clauses) {
-		return true, state
+		return true, false, state
 	}
 
 	// TODO: could make a better heuristic as opposed to arbitrarily picking a variable to branch on
 	// loop over the variables in formula for branching
-	for idx := range state.Formula.Vars {
-		_, ok := state.Assignments[idx]
+	for _, varIdx := range state.Formula.VarBranchingOrder {
+		_, ok := state.Assignments[varIdx]
 
 		if !ok {
+			//DebugFormat("DEPTH: %d, Branching On V%d~ \n", len(state.Assignments), varIdx)
 			stateCopy := state.Copy()
-			assignment := stateCopy.AssignmentFromDynamicLargestCombinedSum(idx)
-			stateCopy.AssignmentPropagation(idx, assignment)
-			solved, solvedState := stateCopy.SolveFromState()
+			assignment := stateCopy.AssignmentFromDynamicLargestCombinedSum(varIdx)
+			stateCopy.AssignmentPropagation(varIdx, assignment)
+			solved, runOutOfBacktracks, solvedState := stateCopy.SolveFromState()
+
+			if runOutOfBacktracks {
+				return false, true, nil
+			}
 
 			if solved {
-				return solved, solvedState
+				return solved, false, solvedState
 			}
+
+			state.Formula.BacktrackCounter++
+			//DebugLine("Backtrack #", state.Formula.BacktrackCounter)
 
 			stateCopy = state.Copy()
-			stateCopy.AssignmentPropagation(idx, Negate(assignment))
-			solved, solvedState = stateCopy.SolveFromState()
+			stateCopy.AssignmentPropagation(varIdx, Negate(assignment))
+			solved, runOutOfBacktracks, solvedState = stateCopy.SolveFromState()
+
+			if runOutOfBacktracks {
+				return false, true, nil
+			}
 
 			if solved {
-				return solved, solvedState
+				return solved, false, solvedState
 			}
+
+			state.Formula.BacktrackCounter++
+			//DebugLine("Backtrack #", state.Formula.BacktrackCounter)
 		}
 
 		//This loop will bottom out if we've gone branched on all the
 		//unassigned variables and none of them lead to sat
 	}
 
-	return false, state
+	return false, false, state
 }
 
 func (state *BooleanFormulaState) AssignmentFromDynamicLargestCombinedSum(variable VarIndex) VarState {

@@ -6,8 +6,8 @@ import (
 	"sort"
 )
 
-//Do some operations that shouldn't need to be repeated with every solver reset
-//If these already make the formula unsat, it will be caught down the line...
+// Do some operations that shouldn't need to be repeated with every solver reset
+// If these already make the formula unsat, it will be caught down the line...
 func (state *BooleanFormulaState) StateSetUp() {
 	state.SetWatcherVariables()
 
@@ -89,13 +89,14 @@ func (state *BooleanFormulaState) SolveFromState() (bool, bool, *BooleanFormulaS
 		_, ok := state.Assignments[varIdx]
 
 		if !ok {
-			stateCopy := state.Copy()
-			isPure, shouldSkip, assignment := stateCopy.AssignmentFromDynamicLargestCombinedSum(varIdx)
+			stateCopy := state.Copy() //Making a clean copy for the negation later on
+
+			isPure, shouldSkip, assignment := state.AssignmentFromDynamicLargestCombinedSum(varIdx)
 			if shouldSkip {
 				continue
 			}
-			stateCopy.AssignmentPropagation(varIdx, assignment)
-			solved, runOutOfBacktracks, solvedState := stateCopy.SolveFromState()
+			state.AssignmentPropagation(varIdx, assignment)
+			solved, runOutOfBacktracks, solvedState := state.SolveFromState()
 
 			if runOutOfBacktracks {
 				return false, true, nil
@@ -110,9 +111,7 @@ func (state *BooleanFormulaState) SolveFromState() (bool, bool, *BooleanFormulaS
 			}
 
 			state.Formula.BacktrackCounter++
-			//DebugLine("Backtrack #", state.Formula.BacktrackCounter)
 
-			stateCopy = state.Copy()
 			stateCopy.AssignmentPropagation(varIdx, Negate(assignment))
 			solved, runOutOfBacktracks, solvedState = stateCopy.SolveFromState()
 
@@ -188,8 +187,8 @@ func (state *BooleanFormulaState) SetWatcherVariables() {
 	}
 }
 
-//TODO: should we check for purity here?
-//TODO: change this back from checking for level of purity to # of instances
+// TODO: should we check for purity here?
+// TODO: change this back from checking for level of purity to # of instances
 func (state *BooleanFormulaState) ScoreVariablesForNewBranchingOrder() *map[VarIndex]float64 {
 	scores := make(map[VarIndex]float64)
 	for varIndx, variable := range state.Formula.Vars {

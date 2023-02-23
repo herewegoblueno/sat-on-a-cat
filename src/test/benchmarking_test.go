@@ -6,10 +6,10 @@ import (
 	"testing"
 )
 
-func BenchmarkSolving(t *testing.B) {
-	formula, formulaState, err := sat.ParseCNFFile("input/C140.cnf")
+func BenchmarkSolving(b *testing.B) {
+	formula, formulaState, err := sat.ParseCNFFile("../../input/C181_3151.cnf")
 	if err != nil {
-		fmt.Errorf("Error", err)
+		fmt.Errorf("Error %v", err)
 		return
 	}
 
@@ -20,6 +20,9 @@ func BenchmarkSolving(t *testing.B) {
 
 	for runOutOfBacktracks {
 		runCounter++
+		if runCounter > 150 { //TODO: maybe remove this later
+			break
+		}
 		isSat, runOutOfBacktracks, state = formula.SolveFormula(formulaState.Copy())
 		if runOutOfBacktracks && runCounter%runsBeforeIncreasingBacktrackingLimit == 0 {
 			//Restart!

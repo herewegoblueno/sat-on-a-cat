@@ -1,0 +1,5 @@
+{"Instance": "toy_infeasible.cnf", "Time": "0.00", "Result": "UNSAT"}
+{"Instance": "toy_simple.cnf", "Time": "0.00", "Result": "SAT", "Solution": ""}
+{"Instance": "toy_solveable.cnf", "Time": "0.00", "Result": "SAT", "Solution": ""}
+{"Instance": "toy_test.cnf", "Time": "0.34", "Result": "SAT", "Solution": ""}
+{"Instance": "unit_pure_test.cnf", "Time": "0.00", "Result": "SAT", "Solution": ""}

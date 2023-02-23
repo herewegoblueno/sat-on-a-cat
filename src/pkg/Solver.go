@@ -1,6 +1,7 @@
 package pkg
 
 import (
+	"math"
 	"math/rand"
 	"sort"
 )
@@ -71,26 +72,23 @@ func (state *BooleanFormulaState) SolveFromState() (bool, bool, *BooleanFormulaS
 	}
 
 	//First, since it's time to branch, maybe we shoudl check if we should make a new iteration order...
-	if (state.Depth % 50) == 0 { //TODO: ooo magic numbers...
+	if (state.Depth % state.Formula.DepthLifeTimeForSortingOrders) == 0 {
 		state.VarBranchingOrderLocal = append([]VarIndex(nil), *state.Parent.VarBranchingOrderPointer...)
 		state.VarBranchingOrderPointer = &state.VarBranchingOrderLocal
-		relevantAppearances := state.CountRelevantAppearances()
+		newVariableScoring := state.ScoreVariablesForNewBranchingOrder()
 
 		sort.Slice(state.VarBranchingOrderLocal, func(i, j int) bool {
-			iApprearances := (*relevantAppearances)[state.VarBranchingOrderLocal[i]]
-			jApprearances := (*relevantAppearances)[state.VarBranchingOrderLocal[j]]
+			iApprearances := (*newVariableScoring)[state.VarBranchingOrderLocal[i]]
+			jApprearances := (*newVariableScoring)[state.VarBranchingOrderLocal[j]]
 			return iApprearances > jApprearances
 		})
-		//DebugLine("Made new order!", state.VarBranchingOrderLocal, relevantAppearances)
-		//DebugLine("Made new order!")
-
 	}
 
+	//This loop will stop at fist unassigned var that actually has remaining instances
 	for _, varIdx := range *state.VarBranchingOrderPointer {
 		_, ok := state.Assignments[varIdx]
 
 		if !ok {
-			//DebugFormat("DEPTH: %d, Branching On V%d~ \n", len(state.Assignments), varIdx)
 			stateCopy := state.Copy()
 			isPure, shouldSkip, assignment := stateCopy.AssignmentFromDynamicLargestCombinedSum(varIdx)
 			if shouldSkip {
@@ -122,16 +120,8 @@ func (state *BooleanFormulaState) SolveFromState() (bool, bool, *BooleanFormulaS
 				return false, true, nil
 			}
 
-			if solved {
-				return solved, false, solvedState
-			}
-
-			state.Formula.BacktrackCounter++
-			//DebugLine("Backtrack #", state.Formula.BacktrackCounter)
+			return solved, false, solvedState
 		}
-
-		//This loop will bottom out if we've gone branched on all the
-		//unassigned variables and none of them lead to sat
 	}
 
 	return false, false, state
@@ -151,20 +141,15 @@ func (state *BooleanFormulaState) AssignmentFromDynamicLargestCombinedSum(variab
 		}
 	}
 
+	//Skip it if it has no instances
 	if posCount == 0 && negCount == 0 {
 		return false, true, POS
 	}
 
-	//If we realize this is pure, great news! Even if we don't end up finding sat, we can
-	//net our future sibling states get this information by passing it into our parent...
 	if negCount == 0 {
-		//DebugFormat("Discovered that V%d is %v pure throughout %d instances!\n", variable, int(POS), posCount)
-		state.Parent.PureVariables[variable] = POS
 		return true, false, POS
 
 	} else if posCount == 0 {
-		//DebugFormat("Discovered that V%d is %v pure throughout %d instances!\n", variable, int(NEG), negCount)
-		state.Parent.PureVariables[variable] = NEG
 		return true, false, NEG
 	}
 
@@ -198,27 +183,35 @@ func (state *BooleanFormulaState) SetWatcherVariables() {
 				break
 			}
 		}
-		//DebugLine("given!", clauseIndex, watchedLiteralHolder)
+
 		state.ClauseWatchedLiterals[clauseIndex] = watchedLiteralHolder
 	}
 }
 
-//TODO: can this share work with AssignmentFromDynamicLargestCombinedSum?
-func (state *BooleanFormulaState) CountRelevantAppearances() *map[VarIndex]int {
-	appearances := make(map[VarIndex]int)
+//TODO: should we check for purity here?
+//TODO: change this back from checking for level of purity to # of instances
+func (state *BooleanFormulaState) ScoreVariablesForNewBranchingOrder() *map[VarIndex]float64 {
+	scores := make(map[VarIndex]float64)
 	for varIndx, variable := range state.Formula.Vars {
 		if _, ok := state.Assignments[varIndx]; !ok {
-			appearances[varIndx] = 0
 			continue
 		}
 
-		count := rand.Intn(8) - 4 //TODO: just some janky randomness for now
-		for clauseIdx := range variable.ClauseAppearances {
+		//TODO: just some janky randomness for now
+		posCount := 0
+		negCount := 0
+
+		for clauseIdx, varState := range variable.ClauseAppearances {
 			if _, ok := state.DeletedClauses[clauseIdx]; !ok {
-				count += 1
+				if varState == POS {
+					posCount++
+				} else {
+					negCount++
+				}
 			}
 		}
-		appearances[varIndx] = count
+		scores[varIndx] = math.Max(float64(negCount)/float64(posCount), float64(posCount)/float64(negCount))
+		scores[varIndx] += rand.Float64()
 	}
-	return &appearances
+	return &scores
 }

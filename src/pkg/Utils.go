@@ -141,5 +141,4 @@ func (formula *BooleanFormula) CopyShuffledFormulaVariableBranchingOrder(state *
 		shuffleCounter++
 		state.VarBranchingOrderLocal[index], state.VarBranchingOrderLocal[newIndex] = state.VarBranchingOrderLocal[newIndex], state.VarBranchingOrderLocal[index]
 	}
-	//DebugFormat("%d shuffles made usign shuffle radius of %d\n", shuffleCounter, shuffleRadius)
 }

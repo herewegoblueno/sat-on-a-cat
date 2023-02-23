@@ -34,6 +34,7 @@ func ParseCNFFile(filename string) (*BooleanFormula, *BooleanFormulaState, error
 		0,    //BacktrackCounter
 		500,  //BacktrackingLimit
 		1000, //BacktrackingLimitIncreaseRate
+		50,   //DepthLifeTimeForSortingOrders
 	}
 
 	initialState := BooleanFormulaState{

@@ -1,32 +1,17 @@
-package main
+package test
 
 import (
 	"fmt"
-	"math/rand"
-	"os"
 	sat "sat/pkg"
-	"strings"
-	"time"
+	"testing"
 )
 
-func main() {
-	if len(os.Args) < 1 {
-		fmt.Errorf("Error: no CNF files supplied")
-	}
-	filePath := os.Args[1]
-
-	rand.Seed(time.Now().UTC().UnixNano())
-
-	sat.StartTimer()
-	formula, formulaState, err := sat.ParseCNFFile(filePath)
+func BenchmarkSolving(t *testing.B) {
+	formula, formulaState, err := sat.ParseCNFFile("input/C140.cnf")
 	if err != nil {
 		fmt.Errorf("Error", err)
 		return
 	}
-
-	//formula.PrintBooleanFormula()
-
-	sat.DebugLine("~~~Solving...")
 
 	runCounter := 0
 	runsBeforeIncreasingBacktrackingLimit := 50
@@ -44,8 +29,6 @@ func main() {
 		}
 	}
 
-	sat.StopTimer()
-
 	if isSat { // For debugging purposes to see whether our assignment even work
 		test := state.Debug_CheckAssignmentIsSat()
 		sat.DebugLine("is this assignment really sat?", test)
@@ -53,20 +36,4 @@ func main() {
 	}
 	sat.DebugFormat("Solution: Is sat: %v \n", isSat)
 	sat.DebugLine("Number of runs needed: ", runCounter)
-
-	//Standard output for autograder
-	fmt.Println("")
-	pathTokens := strings.Split(filePath, "/")
-	time := sat.GetElapsedNano() / 1000000000
-	assignmentString := ""
-	//TODO: come back to uncomment this later when it's less annoying to dev (clogs terminal with text)
-	// for varIndx, assignment := range state.Assignments {
-	// 	assignmentString += fmt.Sprintf("%d %t ", varIndx, assignment == sat.POS)
-	// }
-	if isSat {
-		fmt.Printf("{\"Instance\": \"%s\", \"Time\": \"%.2f\", \"Result\": \"SAT\", \"Solution\": \"%s\"}", pathTokens[len(pathTokens)-1], time, strings.TrimSuffix(assignmentString, " "))
-	} else {
-		fmt.Printf("{\"Instance\": \"%s\", \"Time\": \"%.2f\", \"Result\": \"UNSAT\"}", pathTokens[len(pathTokens)-1], time)
-	}
-	fmt.Println("")
 }

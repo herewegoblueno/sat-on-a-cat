@@ -37,6 +37,8 @@ type BooleanFormula struct {
 	BacktrackCounter              int
 	BacktrackingLimit             int
 	BacktrackingLimitIncreaseRate int
+
+	DepthLifeTimeForSortingOrders int
 }
 
 type WatchedLiterals struct {
@@ -52,7 +54,7 @@ type BooleanFormulaState struct {
 
 	Depth                    int
 	VarBranchingOrderLocal   []VarIndex
-	VarBranchingOrderPointer *[]VarIndex //Can point to parent's VarBranchingOrderLocal, or own
+	VarBranchingOrderPointer *[]VarIndex //Can point to ancestor's VarBranchingOrderLocal, or own
 
 	Assignments                                    map[VarIndex]VarState
 	ClauseWatchedLiterals                          map[ClauseIndex]WatchedLiterals //Won't contain unit clauses

@@ -1,7 +1,6 @@
 package pkg
 
 import (
-	"math"
 	"math/rand"
 	"sort"
 )
@@ -72,7 +71,7 @@ func (state *BooleanFormulaState) SolveFromState() (bool, bool, *BooleanFormulaS
 	}
 
 	//First, since it's time to branch, maybe we shoudl check if we should make a new iteration order...
-	if (state.Depth % state.Formula.DepthLifeTimeForSortingOrders) == 0 {
+	if (state.Depth % DEPTH_LIFETIME_FOR_SORTING_ORDERS) == 0 {
 		state.VarBranchingOrderLocal = append([]VarIndex(nil), *state.Parent.VarBranchingOrderPointer...)
 		state.VarBranchingOrderPointer = &state.VarBranchingOrderLocal
 		newVariableScoring := state.ScoreVariablesForNewBranchingOrder()
@@ -188,29 +187,21 @@ func (state *BooleanFormulaState) SetWatcherVariables() {
 }
 
 // TODO: should we check for purity here?
-// TODO: change this back from checking for level of purity to # of instances
-func (state *BooleanFormulaState) ScoreVariablesForNewBranchingOrder() *map[VarIndex]float64 {
-	scores := make(map[VarIndex]float64)
+func (state *BooleanFormulaState) ScoreVariablesForNewBranchingOrder() *map[VarIndex]int {
+	scores := make(map[VarIndex]int)
 	for varIndx, variable := range state.Formula.Vars {
-		if _, ok := state.Assignments[varIndx]; !ok {
+		if _, ok := state.Assignments[varIndx]; ok {
 			continue
 		}
 
-		//TODO: just some janky randomness for now
-		posCount := 0
-		negCount := 0
-
-		for clauseIdx, varState := range variable.ClauseAppearances {
+		count := rand.Intn(2) - 1 //TODO: just some janky randomness for now
+		for clauseIdx := range variable.ClauseAppearances {
 			if _, ok := state.DeletedClauses[clauseIdx]; !ok {
-				if varState == POS {
-					posCount++
-				} else {
-					negCount++
-				}
+				count += 1
 			}
 		}
-		scores[varIndx] = math.Max(float64(negCount)/float64(posCount), float64(posCount)/float64(negCount))
-		scores[varIndx] += rand.Float64()
+		scores[varIndx] = count
 	}
+
 	return &scores
 }

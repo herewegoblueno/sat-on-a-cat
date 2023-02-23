@@ -29,12 +29,8 @@ func ParseCNFFile(filename string) (*BooleanFormula, *BooleanFormulaState, error
 		make(map[VarIndex]*SATVar),
 		make(map[ClauseIndex]*SATClause),
 		make([]VarIndex, 0),
-		0.7,  //VarBranchingOrderShuffleDistance[0, 1]
-		50,   //VarBranchingOrderShuffleChance[0, 100]
-		0,    //BacktrackCounter
-		500,  //BacktrackingLimit
-		1000, //BacktrackingLimitIncreaseRate
-		50,   //DepthLifeTimeForSortingOrders
+		0, //BacktrackCounter,
+		BACKTRACK_LIMIT_MIN,
 	}
 
 	initialState := BooleanFormulaState{

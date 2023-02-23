@@ -30,15 +30,9 @@ type BooleanFormula struct {
 	Vars    map[VarIndex]*SATVar       //Immutable after parsing
 	Clauses map[ClauseIndex]*SATClause //Immutable after parsing
 
-	VarBranchingOrderOriginal        []VarIndex
-	VarBranchingOrderShuffleDistance float64 //[0, 1]
-	VarBranchingOrderShuffleChance   int     //[0, 100]
-
-	BacktrackCounter              int
-	BacktrackingLimit             int
-	BacktrackingLimitIncreaseRate int
-
-	DepthLifeTimeForSortingOrders int
+	VarBranchingOrderOriginal []VarIndex
+	BacktrackCounter          int
+	BacktrackingLimit         int
 }
 
 type WatchedLiterals struct {

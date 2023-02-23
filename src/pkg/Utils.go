@@ -111,18 +111,18 @@ func (formula *BooleanFormula) CopyShuffledFormulaVariableBranchingOrder(state *
 	//Copying over
 	state.VarBranchingOrderLocal = append([]VarIndex(nil), formula.VarBranchingOrderOriginal...)
 
-	if formula.VarBranchingOrderShuffleChance == 0 || formula.VarBranchingOrderShuffleDistance == 0 {
+	if VAR_BRANCHING_ORDER_SHUFFLE_CHANCE == 0 || VAR_BRANCHING_ORDER_SHUFFLE_DISTANCE == 0 {
 		return
 	}
 
-	shuffleRadius := int(math.Floor(float64(len(formula.Vars)) * formula.VarBranchingOrderShuffleDistance))
+	shuffleRadius := int(math.Floor(float64(len(formula.Vars)) * VAR_BRANCHING_ORDER_SHUFFLE_DISTANCE))
 	if shuffleRadius == 0 {
 		return
 	}
 
 	shuffleCounter := 0
 	for index := range state.VarBranchingOrderLocal {
-		if rand.Intn(100) > formula.VarBranchingOrderShuffleChance {
+		if rand.Intn(100) > VAR_BRANCHING_ORDER_SHUFFLE_CHANCE {
 			continue
 		}
 
@@ -141,4 +141,14 @@ func (formula *BooleanFormula) CopyShuffledFormulaVariableBranchingOrder(state *
 		shuffleCounter++
 		state.VarBranchingOrderLocal[index], state.VarBranchingOrderLocal[newIndex] = state.VarBranchingOrderLocal[newIndex], state.VarBranchingOrderLocal[index]
 	}
+}
+
+func Clamp(num int, max int, min int) int {
+	if num > max {
+		return max
+	}
+	if num < min {
+		return min
+	}
+	return num
 }

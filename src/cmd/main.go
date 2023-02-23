@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"math"
 	"math/rand"
 	"os"
 	sat "sat/pkg"
@@ -28,19 +29,35 @@ func main() {
 
 	sat.DebugLine("~~~Solving...")
 
-	runCounter := 0
-	runsBeforeIncreasingBacktrackingLimit := 50
+	runCounterTotal := 0
+	runsCounterSinceLastRestart := 0
+
+	runsBeforeIncreasingBacktrackingLimitCurrent := sat.RUNS_BEFORE_INCREASING_BACKTRACK_LIMIT_MAX
+	currentBacktrackingLimitIncrement := sat.BACKTRACK_LIMIT_INCREMENT_MIN
+
 	isSat, runOutOfBacktracks, state := false, true, &sat.BooleanFormulaState{}
 	formulaState.StateSetUp()
 
 	for runOutOfBacktracks {
-		runCounter++
+		runCounterTotal++
+		runsCounterSinceLastRestart++
 		isSat, runOutOfBacktracks, state = formula.SolveFormula(formulaState.Copy())
-		if runOutOfBacktracks && runCounter%runsBeforeIncreasingBacktrackingLimit == 0 {
-			//Restart!
-			newBacktrackLimit := formula.BacktrackingLimit + formula.BacktrackingLimitIncreaseRate
-			sat.DebugFormat("~~~Back track limit of %d hit %d times! Starting run #%d with backtracking limit %d \n", formula.BacktrackingLimit, runsBeforeIncreasingBacktrackingLimit, runCounter+1, newBacktrackLimit)
+		if runOutOfBacktracks && runsCounterSinceLastRestart == runsBeforeIncreasingBacktrackingLimitCurrent {
+			//Restart with a new limit!
+			newBacktrackLimit := formula.BacktrackingLimit + currentBacktrackingLimitIncrement
+			sat.DebugFormat("~~~Back track limit of %d hit %d times! Starting run #%d with backtracking limit %d (increase of %d)\n",
+				formula.BacktrackingLimit, runsBeforeIncreasingBacktrackingLimitCurrent, runCounterTotal+1, newBacktrackLimit, currentBacktrackingLimitIncrement)
 			formula.BacktrackingLimit = newBacktrackLimit
+			runsCounterSinceLastRestart = 0
+
+			runsBeforeIncreasingBacktrackingLimitCurrent = sat.Clamp(
+				int(math.Floor(float64(runsBeforeIncreasingBacktrackingLimitCurrent)*sat.DECREASE_RATE_FOR_RUNS_THRESHOLD)),
+				sat.RUNS_BEFORE_INCREASING_BACKTRACK_LIMIT_MAX,
+				sat.RUNS_BEFORE_INCREASING_BACKTRACK_LIMIT_MIN,
+			)
+
+			currentBacktrackingLimitIncrement = int(math.Floor(float64(currentBacktrackingLimitIncrement) * sat.BACKTRACK_LIMIT_INCREMENT_INCREASE_RATE))
+
 		}
 	}
 
@@ -52,7 +69,7 @@ func main() {
 		//sat.PrintBooleanFormulaState(state)
 	}
 	sat.DebugFormat("Solution: Is sat: %v \n", isSat)
-	sat.DebugLine("Number of runs needed: ", runCounter)
+	sat.DebugLine("Number of runs needed: ", runCounterTotal)
 
 	//Standard output for autograder
 	fmt.Println("")

@@ -1,6 +1,7 @@
 package pkg
 
 import (
+	"math"
 	"math/rand"
 	"sort"
 )
@@ -187,20 +188,28 @@ func (state *BooleanFormulaState) SetWatcherVariables() {
 }
 
 // TODO: should we check for purity here?
-func (state *BooleanFormulaState) ScoreVariablesForNewBranchingOrder() *map[VarIndex]int {
-	scores := make(map[VarIndex]int)
+func (state *BooleanFormulaState) ScoreVariablesForNewBranchingOrder() *map[VarIndex]float64 {
+	scores := make(map[VarIndex]float64)
 	for varIndx, variable := range state.Formula.Vars {
-		if _, ok := state.Assignments[varIndx]; ok {
+		if _, ok := state.Assignments[varIndx]; !ok {
 			continue
 		}
 
-		count := rand.Intn(2) - 1 //TODO: just some janky randomness for now
-		for clauseIdx := range variable.ClauseAppearances {
+		//TODO: just some janky randomness for now
+		posCount := 0
+		negCount := 0
+
+		for clauseIdx, varState := range variable.ClauseAppearances {
 			if _, ok := state.DeletedClauses[clauseIdx]; !ok {
-				count += 1
+				if varState == POS {
+					posCount++
+				} else {
+					negCount++
+				}
 			}
 		}
-		scores[varIndx] = count
+		scores[varIndx] = math.Max(float64(negCount)/float64(posCount), float64(posCount)/float64(negCount))
+		scores[varIndx] += rand.Float64()
 	}
 
 	return &scores

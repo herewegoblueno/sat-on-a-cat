@@ -11,8 +11,6 @@ import (
 	"strings"
 )
 
-// TODO: non deterministic parsing dropping vars somehow?
-
 func ParseCNFFile(filename string) (*BooleanFormula, *BooleanFormulaState, error) {
 	file, err := os.Open(filename)
 

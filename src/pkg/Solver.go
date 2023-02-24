@@ -34,13 +34,6 @@ func (b *BooleanFormula) SolveFormula(initialState *BooleanFormulaState) (bool, 
 	b.CopyShuffledFormulaVariableBranchingOrder(initialState)
 	initialState.VarBranchingOrderPointer = &initialState.VarBranchingOrderLocal
 
-	// DebugLine("before solving state")
-	// PrintBooleanFormulaState(initialState)
-	// DebugLine("map of ClauseWatchedLiterals", initialState.ClauseWatchedLiterals)
-	// DebugLine("map of VariablesKeepingTrackOfWhereTheyreBeingWatched", initialState.VariablesKeepingTrackOfWhereTheyreBeingWatched)
-	// DebugLine("map of UnitClauses", initialState.UnitClauses)
-	// DebugLine("now solve", initialState.Sat)
-
 	//Now solve the state...
 	return initialState.SolveFromState()
 }
@@ -187,7 +180,7 @@ func (state *BooleanFormulaState) SetWatcherVariables() {
 	}
 }
 
-// TODO: should we check for purity here?
+// TODO: we can also just update our map of pure variables from here
 func (state *BooleanFormulaState) ScoreVariablesForNewBranchingOrder() *map[VarIndex]float64 {
 	scores := make(map[VarIndex]float64)
 	for varIndx, variable := range state.Formula.Vars {
@@ -195,7 +188,6 @@ func (state *BooleanFormulaState) ScoreVariablesForNewBranchingOrder() *map[VarI
 			continue
 		}
 
-		//TODO: just some janky randomness for now
 		posCount := 0
 		negCount := 0
 

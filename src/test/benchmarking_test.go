@@ -14,8 +14,6 @@ func BenchmarkSolving(b *testing.B) {
 		return
 	}
 
-	//formula.PrintBooleanFormula()
-
 	sat.DebugLine("~~~Solving...")
 
 	runCounterTotal := 0

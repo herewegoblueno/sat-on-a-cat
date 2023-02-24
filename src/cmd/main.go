@@ -76,8 +76,10 @@ func main() {
 	pathTokens := strings.Split(filePath, "/")
 	time := sat.GetElapsedNano() / 1000000000
 	assignmentString := ""
-	for varIndx, assignment := range state.Assignments {
-		assignmentString += fmt.Sprintf("%d %t ", varIndx, assignment == sat.POS)
+	if isSat {
+		for varIndx, assignment := range state.Assignments {
+			assignmentString += fmt.Sprintf("%d %t ", varIndx, assignment == sat.POS)
+		}
 	}
 	if isSat {
 		fmt.Printf("{\"Instance\": \"%s\", \"Time\": \"%.2f\", \"Result\": \"SAT\", \"Solution\": \"%s\"}", pathTokens[len(pathTokens)-1], time, strings.TrimSuffix(assignmentString, " "))

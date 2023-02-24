@@ -1,2 +1,2 @@
 ./compile.sh
-./run.sh input/C1597_060.cnf
+./run.sh input/C210_30.cnf
